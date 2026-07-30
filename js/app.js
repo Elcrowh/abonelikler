@@ -3,6 +3,9 @@
 import * as M from './model.js';
 import * as store from './store.js';
 import * as sync from './sync.js';
+import * as fx from './rates.js';   // "rates" adı aşağıdaki yardımcı fonksiyonla çakışıyor
+import { GLYPH_IDS, GLYPHS, glyphSvg } from './glyphs.js';
+import { CATALOG, searchCatalog } from './catalog.js';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
@@ -14,6 +17,7 @@ const ui = {
   statusFilter: 'counted',
   editingId: null,
   editColor: M.pickColor(),
+  editIcon: '',
   authMode: 'signin',
 };
 
@@ -41,6 +45,17 @@ function base() {
 
 function rates() {
   return store.getSettings().rates;
+}
+
+// Abonelik rozeti: renkli kutu + simge, simge yoksa baş harf.
+function avatarEl({ name, color, icon }, large = false) {
+  const node = el('div', large ? 'avatar lg' : 'avatar');
+  node.style.background = color || '#78716c';
+  node.style.color = M.readableOn(color);
+  const svg = glyphSvg(icon, large ? 28 : 19);
+  if (svg) node.append(svg);
+  else node.append(document.createTextNode(M.monogram(name)));
+  return node;
 }
 
 function cycleLabel(sub) {
@@ -96,9 +111,6 @@ function renderSummary() {
       row.type = 'button';
       if (days <= warnDays) row.classList.add('due-soon');
 
-      const dot = el('span', 'dot');
-      dot.style.background = sub.color;
-
       const main = el('div', 'item-main');
       main.append(el('div', 'item-name', sub.name));
       main.append(el('div', 'item-meta', M.formatDate(date)));
@@ -108,7 +120,7 @@ function renderSummary() {
       right.append(el('div', 'item-note',
         days === 0 ? 'bugün' : days === 1 ? 'yarın' : `${days} gün kaldı`));
 
-      row.append(dot, main, right);
+      row.append(avatarEl(sub), main, right);
       row.addEventListener('click', () => openEdit(sub.id));
       list.append(row);
     }
@@ -182,9 +194,6 @@ function renderList() {
     const row = el('button', 'item');
     row.type = 'button';
 
-    const dot = el('span', 'dot');
-    dot.style.background = sub.color;
-
     const main = el('div', 'item-main');
     const nameLine = el('div', 'item-name');
     nameLine.append(document.createTextNode(sub.name));
@@ -203,7 +212,7 @@ function renderList() {
     const monthly = M.monthlyIn(sub, cur, rates());
     right.append(el('div', 'item-note', `${M.formatMoney(monthly, cur)}/ay`));
 
-    row.append(dot, main, right);
+    row.append(avatarEl(sub), main, right);
     row.addEventListener('click', () => openEdit(sub.id));
     list.append(row);
   }
@@ -222,32 +231,21 @@ function renderSettings() {
   }
   baseSel.value = settings.baseCurrency;
 
-  const grid = $('#rateFields');
-  grid.textContent = '';
+  const list = $('#rateList');
+  list.textContent = '';
   for (const c of M.CURRENCIES) {
-    if (c === 'TRY') continue;
-    const field = el('label', 'field');
-    field.append(el('span', null, `1 ${c} = ? TRY`));
-    const input = el('input', 'input');
-    input.type = 'number';
-    input.step = '0.01';
-    input.min = '0';
-    input.inputMode = 'decimal';
-    input.value = settings.rates[c] ?? '';
-    input.addEventListener('change', () => {
-      store.updateSettings({
-        rates: { ...store.getSettings().rates, [c]: Number(input.value) || 0 },
-        ratesUpdatedAt: new Date().toISOString(),
-      });
-      toast('Kur güncellendi');
-    });
-    field.append(input);
-    grid.append(field);
+    if (c === settings.baseCurrency) continue;
+    const row = el('div', 'rate-row');
+    row.append(el('span', null, `1 ${c}`));
+    const value = M.convert(1, c, settings.baseCurrency, settings.rates);
+    row.append(el('b', null,
+      `${fx.formatRate(value)} ${M.CURRENCY_SYMBOL[settings.baseCurrency]}`));
+    list.append(row);
   }
 
   $('#ratesUpdated').textContent = settings.ratesUpdatedAt
-    ? `Son kur güncellemesi: ${new Date(settings.ratesUpdatedAt).toLocaleString('tr-TR')}`
-    : 'Kurlar henüz elle güncellenmedi.';
+    ? `Otomatik güncellendi: ${new Date(settings.ratesUpdatedAt).toLocaleString('tr-TR')}`
+    : 'Kurlar henüz alınmadı.';
 
   $('#warnDays').value = settings.warnDays;
 
@@ -327,24 +325,94 @@ function fillSelects() {
   const stSel = $('#statusSelect');
   for (const [value, label] of Object.entries(M.STATUS)) stSel.append(new Option(label, value));
 
+  const grid = $('#glyphGrid');
+  // İlk kutu "simge yok" anlamına gelir: baş harf gösterilir.
+  const none = el('button', 'glyph-btn');
+  none.type = 'button';
+  none.dataset.glyph = '';
+  none.title = 'Simge yok — baş harf';
+  none.textContent = 'Aa';
+  none.addEventListener('click', () => { ui.editIcon = ''; syncPickers(); });
+  grid.append(none);
+
+  for (const id of GLYPH_IDS) {
+    const b = el('button', 'glyph-btn');
+    b.type = 'button';
+    b.dataset.glyph = id;
+    b.title = GLYPHS[id].label;
+    b.append(glyphSvg(id));
+    b.addEventListener('click', () => { ui.editIcon = id; syncPickers(); });
+    grid.append(b);
+  }
+}
+
+// Renk ızgarası. Listeden seçilen servisin marka rengi paletin dışında
+// kalabiliyor; o durumda seçili renk ızgaranın başına ayrıca eklenir,
+// yoksa kullanıcı hangi rengin geçerli olduğunu göremiyor.
+function renderColorGrid() {
   const row = $('#colorRow');
-  for (const c of M.PALETTE) {
+  row.textContent = '';
+  const colors = M.PALETTE.includes(ui.editColor)
+    ? M.PALETTE
+    : [ui.editColor, ...M.PALETTE];
+
+  for (const c of colors) {
     const b = el('button', 'swatch');
     b.type = 'button';
     b.style.background = c;
     b.dataset.color = c;
+    b.title = c === ui.editColor && !M.PALETTE.includes(c) ? `${c} (marka rengi)` : c;
+    b.classList.toggle('active', c === ui.editColor);
     b.addEventListener('click', () => {
       ui.editColor = c;
-      syncSwatches();
+      syncPickers();
     });
     row.append(b);
   }
 }
 
-function syncSwatches() {
-  for (const b of $$('.swatch')) {
-    b.classList.toggle('active', b.dataset.color === ui.editColor);
+// Seçili renk/simge işaretlerini ve önizleme rozetini tazeler.
+function syncPickers() {
+  renderColorGrid();
+  for (const b of $$('.glyph-btn')) {
+    b.classList.toggle('active', b.dataset.glyph === ui.editIcon);
   }
+  const holder = $('#editAvatar');
+  const preview = avatarEl(
+    { name: $('#editForm').name.value, color: ui.editColor, icon: ui.editIcon },
+    true
+  );
+  holder.replaceWith(preview);
+  preview.id = 'editAvatar';
+}
+
+/* ---------------- Popüler servis seçici ---------------- */
+
+function renderServiceGrid(query = '') {
+  const grid = $('#serviceGrid');
+  grid.textContent = '';
+  const items = searchCatalog(query);
+  $('#pickerEmpty').hidden = items.length > 0;
+
+  for (const item of items) {
+    const b = el('button', 'service-btn');
+    b.type = 'button';
+    b.append(avatarEl({ name: item.name, color: item.color, icon: item.glyph }));
+    b.append(el('span', null, item.name));
+    b.addEventListener('click', () => applyService(item));
+    grid.append(b);
+  }
+}
+
+function applyService(item) {
+  const form = $('#editForm');
+  form.name.value = item.name;
+  form.category.value = item.category;
+  ui.editColor = item.color;
+  ui.editIcon = item.glyph || '';
+  syncPickers();
+  $('#pickerDialog').close();
+  toast(`${item.name} seçildi`);
 }
 
 function openEdit(id) {
@@ -370,7 +438,8 @@ function openEdit(id) {
   form.url.value = data.url || '';
   form.note.value = data.note || '';
   ui.editColor = data.color;
-  syncSwatches();
+  ui.editIcon = data.icon || '';
+  syncPickers();
   toggleTrialField();
 
   $('#editDialog').showModal();
@@ -396,6 +465,7 @@ function saveEdit(event) {
     paymentMethod: form.paymentMethod.value.trim(),
     url: form.url.value.trim(),
     note: form.note.value.trim(),
+    icon: ui.editIcon,
     color: ui.editColor,
   };
 
@@ -513,6 +583,16 @@ function wire() {
   $('#cancelEdit').addEventListener('click', () => $('#editDialog').close());
   $('#editForm').addEventListener('submit', saveEdit);
   $('#statusSelect').addEventListener('change', toggleTrialField);
+  // Ad yazılırken baş harf rozeti canlı güncellensin.
+  $('#editForm').name.addEventListener('input', syncPickers);
+
+  $('#pickServiceBtn').addEventListener('click', () => {
+    $('#pickerSearch').value = '';
+    renderServiceGrid('');
+    $('#pickerDialog').showModal();
+  });
+  $('#cancelPicker').addEventListener('click', () => $('#pickerDialog').close());
+  $('#pickerSearch').addEventListener('input', (e) => renderServiceGrid(e.target.value));
 
   $('#deleteBtn').addEventListener('click', () => {
     const sub = store.getById(ui.editingId);
@@ -544,6 +624,19 @@ function wire() {
   $('#baseCurrency').addEventListener('change', (e) => {
     store.updateSettings({ baseCurrency: e.target.value });
   });
+
+  $('#refreshRatesBtn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = 'Alınıyor…';
+    const result = await fx.refreshRates({ force: true });
+    btn.disabled = false;
+    btn.textContent = 'Kurları yenile';
+    if (result.ok) toast('Kurlar güncellendi');
+    else if (result.skipped === 'offline') toast('Çevrimdışısın, son bilinen kur kullanılıyor.');
+    else toast('Kurlar alınamadı, son bilinen kur kullanılıyor.');
+    renderSettings();
+  });
   $('#warnDays').addEventListener('change', (e) => {
     store.updateSettings({ warnDays: Math.min(60, Math.max(1, Number(e.target.value) || 7)) });
   });
@@ -560,6 +653,7 @@ function wire() {
     if (!confirm('Bu cihazdaki tüm abonelikler ve ayarlar silinecek. Emin misin?')) return;
     store.resetAll();
     toast('Temizlendi');
+    fx.refreshRates({ force: true }).then(render); // kurlar sıfırlandı, hemen geri al
   });
 
   $('#authForm').addEventListener('submit', submitAuth);
@@ -593,6 +687,9 @@ function boot() {
   setView('summary');
 
   if (sync.isSignedIn()) sync.sync();
+
+  // Kurlar 6 saatten eskiyse sessizce tazele.
+  fx.refreshRates().then((r) => { if (r.ok) render(); });
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

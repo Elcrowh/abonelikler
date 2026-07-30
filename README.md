@@ -5,7 +5,8 @@ Derleme adımı yok, bağımlılık yok — dosyalar doğrudan çalışıyor.
 
 - Yerel-öncelikli: veriler cihazda tutulur, uygulama internetsiz de açılır.
 - Supabase ile senkron: aynı hesapla girdiğin her cihazda aynı liste.
-- Çoklu para birimi (TRY/USD/EUR/GBP), kurlar Ayarlar'dan elle girilir.
+- Çoklu para birimi (TRY/USD/EUR/GBP), kurlar otomatik çekilir.
+- 70+ popüler servis hazır listede; olmayan için 37 simge ve 30 renk.
 - Yaklaşan ödemeler, kategori dağılımı, deneme sürümü takibi, JSON yedek.
 
 ## Dosyalar
@@ -16,6 +17,9 @@ Derleme adımı yok, bağımlılık yok — dosyalar doğrudan çalışıyor.
 | `js/model.js` | Tarih/para hesapları (saf fonksiyonlar) |
 | `js/store.js` | Yerel veri deposu (localStorage) |
 | `js/sync.js` | Supabase senkronu |
+| `js/rates.js` | Otomatik döviz kuru |
+| `js/catalog.js` | Popüler servis listesi |
+| `js/glyphs.js` | Simge çizimleri |
 | `js/app.js` | Arayüz mantığı |
 | `sw.js` · `manifest.webmanifest` | Çevrimdışı çalışma ve "kurulabilir" olma |
 | `config.js` | Supabase adresi ve anahtarı |
@@ -84,9 +88,23 @@ Dosyaları değiştirip tekrar `git push` yeterli. Service worker "önce ağ" ç
 uygulama bir sonraki açılışta yeni sürümü alır. Büyük değişikliklerde `sw.js` içindeki
 `CACHE = 'abo-v1'` sürümünü artır.
 
+## Döviz kurları
+
+Açılışta ve 6 saatte bir otomatik çekiliyor; Ayarlar'daki tuşla elle de yenilenebiliyor.
+Çevrimdışıyken son bilinen kur kullanılır.
+
+Kaynak sırayla `open.er-api.com`, olmazsa `api.frankfurter.app`. İkisi de anahtar
+istemiyor ve tarayıcıdan okunmaya izin veriyor (CORS).
+
+**doviz.com neden kullanılmıyor:** tarayıcılar bir sayfanın başka bir siteden veri
+okumasını CORS kuralıyla engelliyor, doviz.com da izin başlığı göndermiyor. İstemciden
+çekmek mümkün değil. Özellikle onun serbest piyasa rakamları isteniyorsa, veriyi sunucu
+tarafında alıp uygulamaya sunan bir Supabase Edge Function yazmak gerekir.
+
 ## Bilinen sınırlar
 
 - iOS'ta gerçek bildirim (push) yok; yaklaşan ödemeler uygulamayı açtığında görünür.
-- Kurlar otomatik güncellenmez, Ayarlar'dan elle girilir.
+- Servis logoları resmî logo değil, marka rengiyle boyanmış simge/baş harf rozeti
+  (bkz. `js/catalog.js` başındaki not).
 - Çakışma çözümü "son yazan kazanır" — iki cihazda aynı aboneliği aynı anda düzenlersen
   en son kaydedilen kalır.

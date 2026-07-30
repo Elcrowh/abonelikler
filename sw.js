@@ -1,7 +1,7 @@
 // Çevrimdışı çalışma için basit önbellek.
 // Sürüm numarasını değiştirmek eski önbelleği temizler.
 
-const CACHE = 'abo-v1';
+const CACHE = 'abo-v2';
 
 const ASSETS = [
   './',
@@ -13,6 +13,9 @@ const ASSETS = [
   'js/model.js',
   'js/store.js',
   'js/sync.js',
+  'js/rates.js',
+  'js/glyphs.js',
+  'js/catalog.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',

@@ -82,9 +82,12 @@
         <span>Ana para birimi</span>
         <select id="baseCurrency" class="input"></select>
       </label>
-      <p class="help">Toplamlar bu para biriminde gösterilir. Aşağıdaki kurlar 1 birimin kaç TL ettiğini belirtir; elle güncellersin.</p>
-      <div id="rateFields" class="rate-grid"></div>
-      <p class="help" id="ratesUpdated"></p>
+      <p class="help">Toplamlar bu para biriminde gösterilir.</p>
+      <div id="rateList" class="rate-list"></div>
+      <div class="sync-line">
+        <span class="help" id="ratesUpdated" style="margin:0"></span>
+        <button class="btn compact" id="refreshRatesBtn">Kurları yenile</button>
+      </div>
     </div>
 
     <h2 class="section-title">Uyarılar</h2>
@@ -142,10 +145,17 @@
       <button type="submit" class="link strong">Kaydet</button>
     </header>
     <div class="sheet-body">
-      <label class="field">
-        <span>Ad</span>
-        <input name="name" class="input" required placeholder="Netflix" autocomplete="off">
-      </label>
+      <div class="identity">
+        <div class="avatar lg" id="editAvatar"></div>
+        <div class="identity-main">
+          <label class="field" style="margin:0">
+            <span>Ad</span>
+            <input name="name" class="input" required placeholder="Netflix" autocomplete="off">
+          </label>
+        </div>
+      </div>
+      <button type="button" class="btn wide" id="pickServiceBtn">Popüler servislerden seç</button>
+      <p class="help" style="margin-top:10px">Listede yoksa adı kendin yaz, aşağıdan simge ve renk seç.</p>
 
       <div class="field-row">
         <label class="field grow">
@@ -212,13 +222,34 @@
       </label>
 
       <div class="field">
+        <span>Simge</span>
+        <div class="glyph-grid" id="glyphGrid"></div>
+      </div>
+
+      <div class="field">
         <span>Renk</span>
-        <div class="color-row" id="colorRow"></div>
+        <div class="color-grid" id="colorRow"></div>
       </div>
 
       <button type="button" class="btn danger wide" id="deleteBtn" hidden>Bu aboneliği sil</button>
     </div>
   </form>
+</dialog>
+
+<!-- Popüler servis seçici -->
+<dialog id="pickerDialog" class="sheet">
+  <div class="sheet-inner">
+    <header class="sheet-head">
+      <button type="button" class="link" id="cancelPicker">Kapat</button>
+      <strong>Servis seç</strong>
+      <span style="width:56px"></span>
+    </header>
+    <div class="sheet-body">
+      <input type="search" id="pickerSearch" class="input" placeholder="Servis ara…" autocomplete="off">
+      <div class="service-grid" id="serviceGrid"></div>
+      <p class="empty" id="pickerEmpty" hidden>Bu isimde bir servis yok. Kapat ve adı kendin yaz.</p>
+    </div>
+  </div>
 </dialog>
 
 <!-- Giriş / kayıt -->

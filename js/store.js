@@ -7,9 +7,11 @@ const KEY = 'abo.v1';
 
 const DEFAULT_SETTINGS = {
   baseCurrency: 'TRY',
-  // 1 birim yabancı para kaç TRY eder. Ayarlar ekranından elle güncellenir.
+  // 1 birim yabancı para kaç TRY eder. rates.js tarafından otomatik güncellenir;
+  // buradaki değerler yalnızca ilk açılışta, kurlar henüz gelmeden kullanılır.
   rates: { USD: 42, EUR: 46, GBP: 54 },
   ratesUpdatedAt: '',
+  ratesSource: '',
   warnDays: 7,
 };
 

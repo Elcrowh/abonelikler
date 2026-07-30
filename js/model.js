@@ -61,6 +61,7 @@ export function newSubscription(patch = {}) {
     paymentMethod: '',
     url: '',
     note: '',
+    icon: '',            // glyphs.js içindeki simge kimliği; boşsa baş harf kullanılır
     color: pickColor(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -68,12 +69,35 @@ export function newSubscription(patch = {}) {
   };
 }
 
-// Antrasit arayüzle uyumlu, bastırılmış tonlar: griye yakın ama
-// abonelikleri birbirinden ayırmaya yetecek kadar farklı.
+// Abonelik renkleri. Koyu zeminde okunur, birbirinden ayırt edilebilir 30 ton.
 const PALETTE = [
-  '#c9ccd1', '#9aa0a6', '#7d8590', '#a68b8b', '#a6957f',
-  '#9aa68b', '#8ba69f', '#8b95a6', '#9a8ba6', '#a68b9a',
+  '#ef4444', '#f43f5e', '#ec4899', '#d946ef', '#a855f7',
+  '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4',
+  '#14b8a6', '#10b981', '#22c55e', '#84cc16', '#eab308',
+  '#f59e0b', '#f97316', '#ea580c', '#dc2626', '#be123c',
+  '#9f1239', '#7c3aed', '#1d4ed8', '#0369a1', '#0f766e',
+  '#15803d', '#4d7c0f', '#a16207', '#78716c', '#94a3b8',
 ];
+
+// Baş harf rozetleri için: koyu renklerde beyaz, açık renklerde siyah yazı.
+export function readableOn(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return '#ffffff';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  // Algısal parlaklık (ITU-R BT.601)
+  const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luma > 0.62 ? '#101014' : '#ffffff';
+}
+
+// Simgesi olmayan abonelikler için baş harf.
+export function monogram(name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return '?';
+  return trimmed[0].toLocaleUpperCase('tr');
+}
 
 export function pickColor() {
   return PALETTE[Math.floor(Math.random() * PALETTE.length)];

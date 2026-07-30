@@ -227,9 +227,6 @@ textarea.input { resize: vertical; }
 .row-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .row-actions .btn { flex: 1; min-width: 140px; }
 
-.rate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-.rate-grid .field { margin-bottom: 0; }
-
 .toolbar { display: flex; gap: 10px; margin-bottom: 12px; }
 .compact-select { width: auto; flex: none; }
 
@@ -246,12 +243,93 @@ textarea.input { resize: vertical; }
 }
 .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 
-.color-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch {
-  width: 30px; height: 30px; border-radius: 50%;
-  border: 2px solid transparent; cursor: pointer; padding: 0;
+/* ---------- Simge rozeti ---------- */
+
+.avatar {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  flex: none;
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 15px;
+  line-height: 1;
 }
-.swatch.active { border-color: var(--text); }
+.avatar svg { width: 19px; height: 19px; stroke-width: 1.9; }
+.avatar.lg { width: 54px; height: 54px; border-radius: 14px; font-size: 23px; }
+.avatar.lg svg { width: 28px; height: 28px; }
+
+.identity { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.identity-main { flex: 1; min-width: 0; }
+
+/* ---------- Seçim ızgaraları ---------- */
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+  gap: 8px;
+}
+.swatch {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg) inset; }
+
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+}
+.glyph-btn {
+  aspect-ratio: 1;
+  display: grid; place-items: center;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.glyph-btn svg { width: 20px; height: 20px; }
+.glyph-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.service-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 6px;
+  color: var(--text);
+  font: inherit; font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  min-height: 92px;
+  justify-content: center;
+}
+.service-btn:active { background: var(--bg-elev-2); }
+.service-btn span { word-break: break-word; }
+
+/* ---------- Kur listesi ---------- */
+
+.rate-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.rate-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14.5px;
+}
+.rate-row b { font-weight: 650; font-variant-numeric: tabular-nums; }
 
 /* ---------- Alt sekmeler ---------- */
 
@@ -309,7 +387,8 @@ textarea.input { resize: vertical; }
   .sheet { border-radius: 18px; margin: auto; max-height: 88dvh; }
 }
 
-.sheet form { display: flex; flex-direction: column; max-height: inherit; }
+.sheet form,
+.sheet .sheet-inner { display: flex; flex-direction: column; max-height: inherit; }
 
 .sheet-head {
   display: flex; align-items: center; justify-content: space-between;
