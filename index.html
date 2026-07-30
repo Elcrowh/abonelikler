@@ -66,6 +66,7 @@
       <button class="chip active" data-status="counted">Aktif</button>
       <button class="chip" data-status="all">Tümü</button>
       <button class="chip" data-status="trial">Deneme</button>
+      <button class="chip" data-status="once">Tek seferlik</button>
       <button class="chip" data-status="cancelled">İptal</button>
     </div>
     <div id="subList" class="stack"></div>
@@ -169,26 +170,27 @@
       </div>
 
       <div class="field-row">
-        <label class="field">
+        <label class="field" id="intervalField">
           <span>Her</span>
           <input name="interval" class="input" type="number" min="1" step="1" value="1" inputmode="numeric">
         </label>
         <label class="field grow">
           <span>Periyot</span>
-          <select name="unit" class="input">
+          <select name="unit" class="input" id="unitSelect">
             <option value="day">gün</option>
             <option value="week">hafta</option>
             <option value="month" selected>ay</option>
             <option value="year">yıl</option>
+            <option value="once">tek seferlik</option>
           </select>
         </label>
       </div>
 
       <label class="field">
-        <span>İlk / referans ödeme tarihi</span>
+        <span id="dateLabel">İlk / referans ödeme tarihi</span>
         <input name="anchorDate" class="input" type="date" required>
       </label>
-      <p class="help">Sonraki ödeme tarihi bu tarihten itibaren otomatik hesaplanır.</p>
+      <p class="help" id="dateHelp">Sonraki ödeme tarihi bu tarihten itibaren otomatik hesaplanır.</p>
 
       <div class="field-row">
         <label class="field grow">

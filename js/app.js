@@ -59,6 +59,7 @@ function avatarEl({ name, color, icon }, large = false) {
 }
 
 function cycleLabel(sub) {
+  if (M.isOneTime(sub)) return 'Tek seferlik';
   const n = Math.max(1, Number(sub.interval) || 1);
   const unit = M.UNITS[sub.unit]?.label || 'ay';
   if (n === 1) {
@@ -159,8 +160,17 @@ function renderList() {
   const q = ui.search.trim().toLocaleLowerCase('tr');
   let subs = store.getSubscriptions().slice();
 
-  if (ui.statusFilter === 'counted') subs = subs.filter(M.isCounted);
-  else if (ui.statusFilter !== 'all') subs = subs.filter((s) => s.status === ui.statusFilter);
+  if (ui.statusFilter === 'counted') {
+    // Aktif listesi: süren abonelikler + tarihi henüz gelmemiş tek seferlikler.
+    // Tarihi geçmiş tek seferlikler buradan düşüp "Tek seferlik" sekmesinde kalır.
+    subs = subs.filter(
+      (s) => (s.status === 'active' || s.status === 'trial') && !M.isElapsedOneTime(s)
+    );
+  } else if (ui.statusFilter === 'once') {
+    subs = subs.filter(M.isOneTime);
+  } else if (ui.statusFilter !== 'all') {
+    subs = subs.filter((s) => s.status === ui.statusFilter);
+  }
 
   if (q) {
     subs = subs.filter((s) =>
@@ -183,10 +193,10 @@ function renderList() {
   const list = $('#subList');
   list.textContent = '';
   if (!subs.length) {
-    list.append(el('div', 'empty',
-      store.getSubscriptions().length
-        ? 'Bu filtreye uyan abonelik yok.'
-        : 'Sağ alttaki + ile ilk aboneliğini ekle.'));
+    let message = 'Bu filtreye uyan abonelik yok.';
+    if (!store.getSubscriptions().length) message = 'Sağ alttaki + ile ilk aboneliğini ekle.';
+    else if (ui.statusFilter === 'once') message = 'Tek seferlik ödeme yok.';
+    list.append(el('div', 'empty', message));
     return;
   }
 
@@ -199,18 +209,25 @@ function renderList() {
     nameLine.append(document.createTextNode(sub.name));
     if (sub.status === 'trial') nameLine.append(el('span', 'badge', 'Deneme'));
     if (sub.status === 'cancelled') nameLine.append(el('span', 'badge muted', 'İptal'));
+    const elapsedOnce = M.isElapsedOneTime(sub);
+    if (elapsedOnce) nameLine.append(el('span', 'badge muted', 'Ödendi'));
     main.append(nameLine);
 
-    const next = M.nextPaymentDate(sub);
-    const meta = sub.status === 'cancelled'
-      ? `${cycleLabel(sub)} · ${sub.category}`
-      : `${cycleLabel(sub)} · sonraki ${M.formatDateShort(next)}`;
+    let meta;
+    if (M.isOneTime(sub)) {
+      meta = `Tek seferlik · ${M.formatDate(M.parseISO(sub.anchorDate))}`;
+    } else if (sub.status === 'cancelled') {
+      meta = `${cycleLabel(sub)} · ${sub.category}`;
+    } else {
+      meta = `${cycleLabel(sub)} · sonraki ${M.formatDateShort(M.nextPaymentDate(sub))}`;
+    }
     main.append(el('div', 'item-meta', meta));
 
     const right = el('div', 'item-right');
     right.append(el('div', 'item-amount', M.formatMoney(sub.amount, sub.currency)));
-    const monthly = M.monthlyIn(sub, cur, rates());
-    right.append(el('div', 'item-note', `${M.formatMoney(monthly, cur)}/ay`));
+    right.append(el('div', 'item-note', M.isOneTime(sub)
+      ? 'tek seferlik'
+      : `${M.formatMoney(M.monthlyIn(sub, cur, rates()), cur)}/ay`));
 
     row.append(avatarEl(sub), main, right);
     row.addEventListener('click', () => openEdit(sub.id));
@@ -441,6 +458,7 @@ function openEdit(id) {
   ui.editIcon = data.icon || '';
   syncPickers();
   toggleTrialField();
+  toggleCycleFields();
 
   $('#editDialog').showModal();
   if (!sub) setTimeout(() => form.name.focus(), 60);
@@ -450,13 +468,24 @@ function toggleTrialField() {
   $('#trialField').hidden = $('#editForm').status.value !== 'trial';
 }
 
+// Tek seferlik ödemede "her N periyot" alanının karşılığı yok; gizlenir
+// ve tarih alanı "ilk ödeme" yerine tek ödemenin tarihini anlatır.
+function toggleCycleFields() {
+  const once = $('#editForm').unit.value === 'once';
+  $('#intervalField').hidden = once;
+  $('#dateLabel').textContent = once ? 'Ödeme tarihi' : 'İlk / referans ödeme tarihi';
+  $('#dateHelp').textContent = once
+    ? 'Tarih geçtikten sonra listede "Tek seferlik" sekmesine düşer. Aylık ve yıllık toplamlara dahil edilmez.'
+    : 'Sonraki ödeme tarihi bu tarihten itibaren otomatik hesaplanır.';
+}
+
 function saveEdit(event) {
   const form = $('#editForm');
   const patch = {
     name: form.name.value.trim(),
     amount: Number(form.amount.value) || 0,
     currency: form.currency.value,
-    interval: Math.max(1, Number(form.interval.value) || 1),
+    interval: form.unit.value === 'once' ? 1 : Math.max(1, Number(form.interval.value) || 1),
     unit: form.unit.value,
     anchorDate: form.anchorDate.value,
     category: form.category.value,
@@ -583,6 +612,7 @@ function wire() {
   $('#cancelEdit').addEventListener('click', () => $('#editDialog').close());
   $('#editForm').addEventListener('submit', saveEdit);
   $('#statusSelect').addEventListener('change', toggleTrialField);
+  $('#unitSelect').addEventListener('change', toggleCycleFields);
   // Ad yazılırken baş harf rozeti canlı güncellensin.
   $('#editForm').name.addEventListener('input', syncPickers);
 

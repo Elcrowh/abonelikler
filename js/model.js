@@ -11,12 +11,19 @@ export const CURRENCY_SYMBOL = {
 };
 
 // Fatura döngüsü: interval sayısı + birim.
+// "once" tekrar etmeyen tek bir ödeme; perYear 0 olduğu için aylık/yıllık
+// toplamlara girmiyor (tek seferlik bir gider aylık maliyeti temsil etmez).
 export const UNITS = {
   day: { label: 'gün', perYear: 365 },
   week: { label: 'hafta', perYear: 365 / 7 },
   month: { label: 'ay', perYear: 12 },
   year: { label: 'yıl', perYear: 1 },
+  once: { label: 'tek seferlik', perYear: 0 },
 };
+
+export function isOneTime(sub) {
+  return sub.unit === 'once';
+}
 
 export const CATEGORIES = [
   'Eğlence',
@@ -148,10 +155,13 @@ export function addPeriod(date, interval, unit) {
 }
 
 // Bugünden sonraki (veya bugüne eşit) ilk ödeme tarihi.
+// Tek seferlik ödemelerde tarih geçmişse sonraki ödeme yoktur; null döner.
 export function nextPaymentDate(sub, from = new Date()) {
   const anchor = parseISO(sub.anchorDate);
   if (!anchor) return null;
   const ref = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  if (isOneTime(sub)) return anchor >= ref ? anchor : null;
+
   let d = new Date(anchor.getTime());
   if (d >= ref) return d;
 
@@ -196,9 +206,18 @@ export function convert(amount, from, to, rates) {
 }
 
 export function yearlyCost(sub) {
+  if (isOneTime(sub)) return 0;
   const perYear = UNITS[sub.unit]?.perYear ?? 12;
   const n = Math.max(1, Number(sub.interval) || 1);
   return (Number(sub.amount) || 0) * (perYear / n);
+}
+
+// Tarihi geçmiş tek seferlik ödeme: artık ödenecek bir şey yok.
+export function isElapsedOneTime(sub, from = new Date()) {
+  if (!isOneTime(sub)) return false;
+  const date = parseISO(sub.anchorDate);
+  if (!date) return false;
+  return date < new Date(from.getFullYear(), from.getMonth(), from.getDate());
 }
 
 export function monthlyCost(sub) {
@@ -228,8 +247,10 @@ export function formatMoney(value, currency, opts = {}) {
   }
 }
 
-// Toplamlar yalnızca ödemesi süren abonelikleri kapsar.
+// Toplamlar yalnızca tekrar eden, ödemesi süren abonelikleri kapsar.
+// Tek seferlik ödemeler aylık/yıllık maliyete girmez.
 export function isCounted(sub) {
+  if (isOneTime(sub)) return false;
   return sub.status === 'active' || sub.status === 'trial';
 }
 
