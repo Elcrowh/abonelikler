@@ -97,11 +97,22 @@ export function renderDonut(rows, formatValue, centerLabel = 'aylık toplam') {
   track.setAttribute('stroke-width', STROKE);
   g.append(track);
 
+  // Dilimler halkaya tutara göre değil, kanonik kategori sırasına göre diziliyor.
+  // Sebebi: halkada hangi iki rengin yan yana geleceğini bu sıra belirliyor.
+  // Tutara göre dizilseydi komşuluk her fiyat değişiminde başka bir çifte
+  // düşerdi ve doğrulanmamış bir kombinasyon yan yana gelebilirdi (turkuaz ile
+  // magenta gibi: renk körlüğü altında ΔE 1.6, yani ayırt edilemez).
+  // Kanonik sırada komşuluk hep paletin kendi sırası: en kötü çift ΔE 8.4.
+  // Gösterge listesi büyükten küçüğe sıralı kalıyor.
+  const ringOrder = [...slices].sort((a, b) => {
+    if (a.folded !== b.folded) return a.folded ? 1 : -1; // "Diğer" hep sonda
+    return CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category);
+  });
+
   const tekDilim = slices.length === 1;
   let offset = 0;
-  const arcs = [];
 
-  for (const slice of slices) {
+  for (const slice of ringOrder) {
     const raw = slice.share * C;
     // Dilimler arasında 2 piksellik yüzey boşluğu; tek dilimde boşluk olmaz.
     // Payı çok küçük bir kategori boşluk düşülünce tamamen kaybolmasın diye
@@ -117,7 +128,7 @@ export function renderDonut(rows, formatValue, centerLabel = 'aylık toplam') {
     arc.setAttribute('stroke-dasharray', `${len} ${C - len}`);
     arc.setAttribute('stroke-dashoffset', -offset);
     g.append(arc);
-    arcs.push(arc);
+    slice.arc = arc;   // gösterge satırı kendi dilimini bulabilsin
     offset += raw;
   }
 
@@ -142,7 +153,7 @@ export function renderDonut(rows, formatValue, centerLabel = 'aylık toplam') {
   const legend = document.createElement('div');
   legend.className = 'donut-legend';
 
-  const rowsEl = slices.map((slice, i) => {
+  const rowsEl = slices.map((slice) => {
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'legend-row';
@@ -170,7 +181,7 @@ export function renderDonut(rows, formatValue, centerLabel = 'aylık toplam') {
 
     row.append(chip, name, value, pct);
     legend.append(row);
-    return { row, slice, arc: arcs[i] };
+    return { row, slice, arc: slice.arc };
   });
 
   // Vurgulama: dilime ya da gösterge satırına dokununca diğerleri soluyor,
