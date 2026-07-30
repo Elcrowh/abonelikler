@@ -6,6 +6,7 @@ import * as sync from './sync.js';
 import * as fx from './rates.js';   // "rates" adı aşağıdaki yardımcı fonksiyonla çakışıyor
 import { GLYPH_IDS, GLYPHS, glyphSvg } from './glyphs.js';
 import { CATALOG, searchCatalog } from './catalog.js';
+import { renderDonut } from './donut.js';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
@@ -135,22 +136,8 @@ function renderSummary() {
     cats.append(el('div', 'empty', 'Abonelik ekleyince dağılım burada görünecek.'));
     return;
   }
-  const max = rows[0].monthly || 1;
-  const total = rows.reduce((acc, r) => acc + r.monthly, 0) || 1;
-  for (const r of rows) {
-    const card = el('div', 'card bar-row');
-    const head = el('div', 'bar-head');
-    head.append(el('span', null, r.category));
-    const right = el('span', 'pct');
-    right.textContent = `${M.formatMoney(r.monthly, cur)}/ay · %${Math.round((r.monthly / total) * 100)}`;
-    head.append(right);
-    const bar = el('div', 'bar');
-    const fill = el('span');
-    fill.style.width = `${Math.max(3, (r.monthly / max) * 100)}%`;
-    bar.append(fill);
-    card.append(head, bar);
-    cats.append(card);
-  }
+  const { node } = renderDonut(rows, (v) => M.formatMoney(v, cur));
+  cats.append(node);
 }
 
 /* ---------------- Liste ---------------- */

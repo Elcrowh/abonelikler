@@ -171,12 +171,71 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 
 .due-soon .item-note { color: var(--warn); }
 
-/* Kategori çubuğu */
-.bar-row { padding: 12px 14px; }
-.bar-head { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
-.bar-head .pct { color: var(--muted); font-size: 12.5px; }
-.bar { height: 6px; background: var(--bg-elev-2); border-radius: 999px; overflow: hidden; }
-.bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+/* ---------- Kategori halka grafiği ---------- */
+
+.donut-card { padding: 18px 14px 10px; }
+
+.donut-chart {
+  position: relative;
+  width: 100%;
+  max-width: 210px;
+  margin: 0 auto 18px;
+}
+.donut-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.donut-track { fill: none; stroke: var(--bg-elev-2); }
+.donut-arc {
+  fill: none;
+  stroke-linecap: butt;
+  transition: opacity 0.18s ease;
+}
+.donut-arc.dim { opacity: 0.2; }
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+  /* Halkanın iç boşluğuna sığsın: uzun kategori adı seçilince taşmasın. */
+  padding: 0 42px;
+}
+/* Tek başına duran büyük sayı: orantılı rakamlar (tabular-nums burada gevşek durur). */
+.donut-value { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.donut-caption {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.25;
+}
+
+.donut-legend { display: flex; flex-direction: column; }
+.legend-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  background: none; border: 0;
+  color: inherit; font: inherit;
+  padding: 9px 4px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.18s ease;
+}
+.legend-row.dim { opacity: 0.4; }
+.legend-row:active { background: var(--bg-elev-2); }
+.legend-chip { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.legend-name {
+  flex: 1; min-width: 0;
+  font-size: 14px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.legend-value { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend-pct {
+  font-size: 13.5px;
+  width: 44px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 .empty {
   text-align: center;
