@@ -28,6 +28,17 @@ html, body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+
+  /* Yakınlaştırmayı kapat: pan-x pan-y kaydırmaya izin verir, sıkıştırmayı
+     ve çift dokunmayı engeller. Telefonda yanlışlıkla zoom olmasın diye. */
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Dokunulan öğelerde çift dokunma gecikmesi de kalksın. */
+button, a, input, select, textarea, label, .item, .tab, .chip {
+  touch-action: manipulation;
 }
 
 body {

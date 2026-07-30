@@ -709,9 +709,36 @@ function wire() {
   });
 }
 
+/* ---------------- Yakınlaştırmayı kapat ---------------- */
+
+// iOS Safari, tarayıcı modunda viewport'taki user-scalable=no'yu yok sayıyor.
+// Sıkıştırarak yakınlaştırma orada ancak WebKit'e özel gesture olaylarıyla,
+// çift dokunma ise CSS touch-action ile engellenebiliyor. İkisi birlikte gerekli.
+function disableZoom() {
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+    document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+  }
+
+  // Eski iOS sürümlerinde touch-action yetmiyor. Yalnızca 300 ms içinde
+  // AYNI noktaya gelen ikinci dokunuş iptal edilir; iki farklı düğmeye hızlı
+  // basmak (çip değiştirmek gibi) etkilenmesin diye konum da karşılaştırılıyor.
+  // Yazı alanları hariç: orada dokunuşu kesmek odaklanmayı bozar.
+  let last = { at: 0, x: 0, y: 0 };
+  document.addEventListener('touchend', (e) => {
+    if (e.target.closest('input, textarea, select')) return;
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const now = Date.now();
+    const yakin = Math.hypot(touch.clientX - last.x, touch.clientY - last.y) < 30;
+    if (now - last.at <= 300 && yakin) e.preventDefault();
+    last = { at: now, x: touch.clientX, y: touch.clientY };
+  }, { passive: false });
+}
+
 /* ---------------- Başlangıç ---------------- */
 
 function boot() {
+  disableZoom();
   fillSelects();
   wire();
   setView('summary');
