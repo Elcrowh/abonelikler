@@ -68,9 +68,11 @@ export function newSubscription(patch = {}) {
   };
 }
 
+// Antrasit arayüzle uyumlu, bastırılmış tonlar: griye yakın ama
+// abonelikleri birbirinden ayırmaya yetecek kadar farklı.
 const PALETTE = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#64748b',
+  '#c9ccd1', '#9aa0a6', '#7d8590', '#a68b8b', '#a6957f',
+  '#9aa68b', '#8ba69f', '#8b95a6', '#9a8ba6', '#a68b9a',
 ];
 
 export function pickColor() {

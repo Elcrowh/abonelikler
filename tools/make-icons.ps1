@@ -22,7 +22,7 @@ function New-Icon([int]$size, [string]$file, [single]$inset, [bool]$roundBackgro
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 
-  $bg = [System.Drawing.Color]::FromArgb(11, 16, 32)
+  $bg = [System.Drawing.Color]::FromArgb(10, 10, 11)
   $g.Clear($bg)
 
   if ($roundBackground) {
@@ -43,33 +43,33 @@ function New-Icon([int]$size, [string]$file, [single]$inset, [bool]$roundBackgro
 
   # Arkadaki soluk katman (üst üste binen abonelikler hissi).
   $backPath = New-RoundedPath ($cx + $cw * 0.06) ($cy - $ch * 0.20) ($cw * 0.88) $ch $radius
-  $backBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(90, 91, 140, 255))
+  $backBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 42, 42, 48))
   $g.FillPath($backBrush, $backPath)
   $backBrush.Dispose(); $backPath.Dispose()
 
-  # Öndeki ana kart.
+  # Öndeki ana kart: koyu grafitten açık griye.
   $cardPath = New-RoundedPath $cx $cy $cw $ch $radius
   $rect = New-Object System.Drawing.RectangleF($cx, $cy, $cw, $ch)
   $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
     $rect,
-    [System.Drawing.Color]::FromArgb(255, 91, 140, 255),
-    [System.Drawing.Color]::FromArgb(255, 150, 100, 255),
+    [System.Drawing.Color]::FromArgb(255, 233, 233, 238),
+    [System.Drawing.Color]::FromArgb(255, 138, 138, 147),
     45.0)
   $g.FillPath($grad, $cardPath)
   $grad.Dispose(); $cardPath.Dispose()
 
-  # Kart üzerindeki iki satır.
-  $lineBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(235, 255, 255, 255))
+  # Kart üzerindeki iki satır (koyu, açık kartın üstünde okunsun diye).
+  $lineBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(230, 20, 20, 24))
   $lh = $ch * 0.10
   $l1 = New-RoundedPath ($cx + $cw * 0.12) ($cy + $ch * 0.55) ($cw * 0.46) $lh ($lh / 2)
   $g.FillPath($lineBrush, $l1); $l1.Dispose()
   $l2 = New-RoundedPath ($cx + $cw * 0.12) ($cy + $ch * 0.74) ($cw * 0.28) $lh ($lh / 2)
-  $faint = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(150, 255, 255, 255))
+  $faint = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(120, 20, 20, 24))
   $g.FillPath($faint, $l2); $l2.Dispose()
   $lineBrush.Dispose(); $faint.Dispose()
 
   # Sağ üstte tekrar/yenilenme noktası.
-  $dotBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 61, 220, 151))
+  $dotBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 26, 26, 30))
   $dr = $cw * 0.09
   $g.FillEllipse($dotBrush, ($cx + $cw * 0.74), ($cy + $ch * 0.20), $dr, $dr)
   $dotBrush.Dispose()
